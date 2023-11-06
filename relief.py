@@ -97,5 +97,39 @@ def random_n_points(n=10):
     all_data.to_csv(output_csv, index=False)
     all_data.to_json(output_csv.replace('.csv', '.json'), orient='records')
 
+def max_point():
+    import os
+    import pandas as pd
 
-random_n_points(1)
+    # Directory where your .xyz files are stored
+    input_directory = 'data/DMV1000'
+    output_csv = 'data/relief_max.csv'
+
+    # Get a list of .xyz files
+    xyz_files = [f for f in os.listdir(input_directory) if f.endswith('.XYZ')]
+
+    # An empty list to store the data DataFrames
+    data_frames = []
+
+    # Loop through the files and read them into DataFrames
+    for file_name in xyz_files:
+        file_path = os.path.join(input_directory, file_name)
+        try:
+            # Assuming space-separated values, adjust delimiter as necessary
+            data = pd.read_csv(file_path, delim_whitespace=True, header=None, names=['X', 'Y', 'Z'])
+            
+            # Sample 500 random rows, if the file is smaller, take the length of the file
+            data_max= data[data['Z'] == data['Z'].max()]
+            
+            data_frames.append(data_max)
+        except pd.errors.ParserError as e:
+            print(f"Error reading {file_name}: {e}")
+
+    # Concatenate all the DataFrames into one
+    all_data = pd.concat(data_frames, ignore_index=True)
+
+    # Convert the DataFrame to JSON and write to a file
+    all_data.to_csv(output_csv, index=False)
+    all_data.to_json(output_csv.replace('.csv', '.json'), orient='records')
+
+max_point()
