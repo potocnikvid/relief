@@ -8,12 +8,18 @@ let height = window.innerHeight;
 let points = []; // Array to hold the scaled points
 let prPoints = [];
 let zScaleSlider;
-let zScale = 70; // Initial Z scale value
+let zScale = 0.5; // Initial Z scale value
 let prScaleSlider;
 let prScale = 1; // Initial Z scale value
 let previousZScale = zScale; // Used to scale the Z values based on the slider value
-let sphereSizeSlider;
-let sphereSize = 5; // Initial sphere size value
+let reliefSphereSizeSlider;
+let reliefSphereSize = 5; // Initial sphere size value
+let prSphereSizeSlider;
+let prSphereSize = 5; // Initial sphere size value
+let prElevSlider;
+let prSphereSizeDispersalSlider;
+let prSphereSizeDispersal = 0.5; // Initial sphere size value
+let prElev = 100; // Initial sphere size value
 let hoveredPoints = []; // This will hold the points that are being hovered
 let reliefMaxLat = 0;
 let reliefMaxLong = 0;
@@ -39,17 +45,27 @@ function setup() {
   textFont(font, 28);
 
   // Create a slider to control the Z scale
-  zScaleSlider = createSlider(0, 100, zScale, 1);
-  zScaleSlider.position(200, 20);
+  zScaleSlider = createSlider(0, 1, zScale, 0.01);
+  zScaleSlider.position(20, 20);
 
   // Create a slider to control the sphere size
-  sphereSizeSlider = createSlider(0, 10, sphereSize, 1);
-  sphereSizeSlider.position(200, 50);
+  reliefSphereSizeSlider = createSlider(0, 10, reliefSphereSize, 1);
+  reliefSphereSizeSlider.position(20, 50);
 
   // Create a slider to control the precipitation scale
-  prScaleSlider = createSlider(0.5, 2, prScale, 0.01);
-  prScaleSlider.position(200, 80);
+  prScaleSlider = createSlider(0.5, 3, prScale, 0.01);
+  prScaleSlider.position(20, 80);
 
+  // Create a slider to control the sphere size
+  prSphereSizeSlider = createSlider(0, 10, prSphereSize, 1);
+  prSphereSizeSlider.position(20, 110);
+
+  // Precipitation visualization elevation
+  prElevSlider = createSlider(0, 200, prElev, 1);
+  prElevSlider.position(20, 140);
+
+  prSphereSizeDispersalSlider = createSlider(0, 1, prSphereSizeDispersal, 0.01);
+  prSphereSizeDispersalSlider.position(20, 170);
   // Find max elevation for scaling Z values
   for (let i = 0; i < reliefData.rows.length; i++) {
     let z = reliefData.rows[i][2];
@@ -147,7 +163,7 @@ function normalizePrecipitationPoints() {
       pr: p.pr,
       x: map(p.X, minX, maxX, globalMinX, globalMaxX),
       y: map(p.Y, maxY, minY, globalMinY, globalMaxY),
-      z: map(p.pr, minPr, maxPr, 100, 200), // You might need to adjust Z scale based on your data
+      z: map(p.pr, minPr, maxPr, 0, 1), // You might need to adjust Z scale based on your data
       hue: Math.round(hueValue),
     };
   });
@@ -158,91 +174,95 @@ function draw() {
 
   fill(0, 100, 100);
   stroke(0, 100, 100);
-  text("Z Scale", -width + 500, -height + 260);
-  text("Sphere Size", -width + 500, -height + 300);
-  text("Precipitation Scale", -width + 500, -height + 340);
+  text("Z Scale", -width + 600, -height + 260);
+  text("Relief Sphere Size", -width + 600, -height + 305);
+  text("Precipitation Scale", -width + 600, -height + 350);
+  text("Precipitation Sphere Size", -width + 600, -height + 395);
+  text("Precipitation Elevation", -width + 600, -height + 440);
 
-  text("Click and drag to rotate", -width + 500, -height + 400);
-  text("Scroll to zoom", -width + 500, -height + 440);
+  text("Click and drag to rotate", -width + 500, -height + 700);
+  text("Scroll to zoom", -width + 500, -height + 770);
 
   directionalLight(255, 255, 255, 0, 0, -1); // Add some light
 
-  let newZScale = zScaleSlider.value();
-
-  if (newZScale !== previousZScale) {
-    zScale = newZScale;
-    // Scale the Z values based on the slider value
-    points = points.map((p) => {
-      return {
-        x: p.x,
-        y: p.y,
-        z: map(p.z, -previousZScale, previousZScale, -zScale, zScale),
-        hue: p.hue,
-      };
-    });
-
-    // Update previousZScale to the new zScale after scaling points
-    previousZScale = zScale;
-  }
-  // Reset hoveredPoint to null at the start of each frame
+  // Reset hoveredPoint to [] at the start of each frame
   hoveredPoints = [];
 
+  // Update Z scale based on slider value
+  zScale = zScaleSlider.value();
   // Update sphere size based on slider value
-  sphereSize = sphereSizeSlider.value();
-
+  reliefSphereSize = reliefSphereSizeSlider.value();
   // Update precipitation scale based on slider value
   prScale = prScaleSlider.value();
+  // Update sphere size based on slider value
+  prSphereSize = prSphereSizeSlider.value();
 
+  // Update precip elev based on slider value
+  prElev = prElevSlider.value();
+
+  // Update precip sphere size disperzal based on slider value
+  prSphereSizeDispersal = prSphereSizeDispersalSlider.value();
+  drawRelief();
+  drawPrecipitation();
+  drawInfoText();
+}
+
+function drawRelief() {
   // Draw each point and check for hovering
   for (let pt of points) {
     push();
-    translate(pt.x, pt.y, pt.z);
+    translate(pt.x, pt.y, pt.z + pt.z * zScale * 100);
     // Use a larger radius for the hit test to make it easier to hover over points
     if (
       dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) <
-      sphereSize * 2
+      reliefSphereSize * 2
     ) {
       hoveredPoints.push(pt); // Save the hovered point
-      sphere(sphereSize * 2);
+      sphere(reliefSphereSize * 2);
     } else {
       stroke(pt.hue, 100 - pt.hue / 3, 100 - pt.hue / 3);
-      sphere(sphereSize);
+      sphere(reliefSphereSize);
     }
     // Render the sphere
     pop();
   }
+}
 
+function drawPrecipitation() {
   // Draw each point and check for hovering
   for (let pt of prPoints) {
     push();
-    translate(pt.x, pt.y, pt.z + (pt.z - 100) * Math.pow(prScale, 3));
+    let z = map(pt.z, 0, 1, prElev, 100 + prScale * prElev);
+    translate(pt.x, pt.y, z);
     // Use a larger radius for the hit test to make it easier to hover over points
     if (
       dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) <
-      sphereSize * 2
+      prSphereSize * 2
     ) {
       hoveredPoints.push(pt); // Save the hovered point
-      sphere(sphereSize * 2);
+      sphere(prSphereSize * 2);
     } else {
       stroke(pt.hue, 100 - pt.hue / 7, 100);
-      sphere(sphereSize);
+      sphere(prSphereSize + map((prSphereSizeDispersal * (z)* 3), 0, 1, 0, 0.02));
     }
     // Render the sphere
     pop();
   }
+}
 
+function drawInfoText() {
   // Display the lat/long text if a point is hovered
   if (hoveredPoints.length > 0) {
     fill(0);
     noStroke();
     for (let i = 0; i < hoveredPoints.length; i++) {
       let hoveredPoint = hoveredPoints[i];
-      console.log(hoveredPoint);
+
       if (hoveredPoint.pr) {
         text(
           `Lat: ${hoveredPoint.lat}, Long: ${hoveredPoint.long}, Precipitation: ${hoveredPoint.pr}`,
           mouseX / 2,
-          mouseY / 2 - 35,
+          mouseY / 2 - 35
         );
       } else {
         text(
