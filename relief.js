@@ -179,7 +179,8 @@ function draw() {
   text("Precipitation Scale", -width + 600, -height + 350);
   text("Precipitation Sphere Size", -width + 600, -height + 395);
   text("Precipitation Elevation", -width + 600, -height + 440);
-
+    text("Precipitation Sphere Size Dispersal", -width + 600, -height + 485);
+    
   text("Click and drag to rotate", -width + 500, -height + 700);
   text("Scroll to zoom", -width + 500, -height + 770);
 
