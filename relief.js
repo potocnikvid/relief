@@ -34,14 +34,14 @@ let globalMinY = 0;
 let globalMaxY = 0;
 
 let prYearSlider;
-let prYear = 2040;
+let prYear = 2023;
 
 function preload() {
   // Assuming your data is in a JSON format
   reliefData = loadTable("./relief_max.csv", "csv", "header");
-  prData2100 = loadTable("./precipitation_pred_2100.csv", "csv", "header");
-  prData2070 = loadTable("./precipitation_pred_2070.csv", "csv", "header");
-  prData2040 = loadTable("./precipitation_pred_2040.csv", "csv", "header");
+  prData2100 = loadTable("./precipitation_pred_2070_2100.csv", "csv", "header");
+  prData2070 = loadTable("./precipitation_pred_2040_2070.csv", "csv", "header");
+  prData2040 = loadTable("./precipitation_pred_2010_2040.csv", "csv", "header");
   font = loadFont("./assets/Inconsolata-Medium.ttf");
 }
 
@@ -72,7 +72,7 @@ function setup() {
   prElevSlider = createSlider(0, 200, prElev, 10);
   prElevSlider.position(20, 140);
 
-  prYearSlider = createSlider(2040, 2100, prYear, 30);
+  prYearSlider = createSlider(2010, 2098, prYear, 1);
   prYearSlider.position(20, 200);
   // Find max elevation for scaling Z values
   for (let i = 0; i < reliefData.rows.length; i++) {
@@ -104,11 +104,17 @@ function transformPrecipitationData(data) {
   arr = [];
   // Transform the data to an array of objects
   for (let i = 0; i < data.rows.length; i++) {
-    let y = data.rows[i].arr[0];
-    let x = data.rows[i].arr[1];
-    let pr = data.rows[i].arr[2];
+    let year = data.rows[i].arr[0];
+    let y = data.rows[i].arr[1];
+    let x = data.rows[i].arr[2];
+    let pr = data.rows[i].arr[3];
     if (pr != "--") {
-      arr.push({ X: Number(x), Y: Number(y), pr: Number(pr) });
+      arr.push({
+        year: Number(year),
+        X: Number(x),
+        Y: Number(y),
+        pr: Number(pr),
+      });
     }
   }
   return arr;
@@ -174,10 +180,11 @@ function normalizePrecipitationPoints(prPoints) {
       lat: p.Y,
       long: p.X,
       pr: p.pr,
+      year: p.year,
       x: map(p.X, minX, maxX, globalMinX, globalMaxX),
       y: map(p.Y, maxY, minY, globalMinY, globalMaxY),
-    //   z: map(p.pr, minPr, maxPr, 0, 1), // You might need to adjust Z scale based on your data
-        z: p.pr,
+      //   z: map(p.pr, minPr, maxPr, 0, 1), // You might need to adjust Z scale based on your data
+      z: p.pr * 30,
       hue: Math.round(hueValue),
     };
   });
@@ -189,15 +196,6 @@ function draw() {
 
   fill(0, 100, 100);
   stroke(0, 100, 100);
-  text("Z Scale", -width + 600, -height + 260);
-  text("Relief Sphere Size", -width + 600, -height + 305);
-  text("Precipitation Scale", -width + 600, -height + 350);
-  text("Precipitation Sphere Size", -width + 600, -height + 395);
-  text("Precipitation Elevation", -width + 600, -height + 440);
-    text(`Precipitation Year ${prYearSlider.value().toString()}`, -width + 600, -height + 530);
-
-  text("Click and drag to rotate", -width + 500, -height + 700);
-  text("Scroll to zoom", -width + 500, -height + 770);
 
   directionalLight(255, 255, 255, 0, 0, -1); // Add some light
 
@@ -218,14 +216,17 @@ function draw() {
 
   // Update prYear
   prYear = prYearSlider.value();
+  
+  //Change value of html element with id prYear to prYear value
+    document.getElementById("prYear").innerHTML = prYear;
 
   drawRelief();
-  if (prYear == 2040) {
-    drawPrecipitation(prPoints2040);
-  } else if (prYear == 2070) {
-    drawPrecipitation(prPoints2070);
+  if (prYear >= 2010 && prYear < 2040) {
+    drawPrecipitation(prPoints2040, prYear);
+  } else if (prYear >= 2040 && prYear < 2070) {
+    drawPrecipitation(prPoints2070, prYear);
   } else {
-    drawPrecipitation(prPoints2100);
+    drawPrecipitation(prPoints2100, prYear);
   }
   drawInfoText();
 }
@@ -251,9 +252,10 @@ function drawRelief() {
   }
 }
 
-function drawPrecipitation(points) {
+function drawPrecipitation(points, year) {
   // Draw each point and check for hovering
-  translate(0, 0, prElev)
+  translate(0, 0, prElev);
+  points = points.filter((p) => p.year == year);
   for (let pt of points) {
     push();
     let z = map(pt.z, 0, 1, 0, prScale);
@@ -267,7 +269,7 @@ function drawPrecipitation(points) {
       sphere(prSphereSize * 2);
     } else {
       stroke(pt.hue, 100 - pt.hue / 7, 100);
-      sphere(map(z, 0, prScale, 0, prSphereSize * 3) );
+      sphere(map(z, 0, prScale, 0, prSphereSize * 3));
     }
     // Render the sphere
     pop();
