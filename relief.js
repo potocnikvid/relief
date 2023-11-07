@@ -1,24 +1,27 @@
 let reliefData;
 let prData;
+let prData2100;
+let prData2070;
+let prData2040;
 let easycam;
 let font;
 let maxElevation = 0; // You'll need to know the max elevation for proper scaling
 let width = window.innerWidth;
 let height = window.innerHeight;
 let points = []; // Array to hold the scaled points
-let prPoints = [];
+let prPoints2100 = [];
+let prPoints2070 = [];
+let prPoints2040 = [];
 let zScaleSlider;
 let zScale = 0.5; // Initial Z scale value
 let prScaleSlider;
-let prScale = 1; // Initial Z scale value
+let prScale = 100; // Initial Z scale value
 let previousZScale = zScale; // Used to scale the Z values based on the slider value
 let reliefSphereSizeSlider;
 let reliefSphereSize = 5; // Initial sphere size value
 let prSphereSizeSlider;
 let prSphereSize = 5; // Initial sphere size value
 let prElevSlider;
-let prSphereSizeDispersalSlider;
-let prSphereSizeDispersal = 0.5; // Initial sphere size value
 let prElev = 100; // Initial sphere size value
 let hoveredPoints = []; // This will hold the points that are being hovered
 let reliefMaxLat = 0;
@@ -30,10 +33,15 @@ let globalMaxX = 0;
 let globalMinY = 0;
 let globalMaxY = 0;
 
+let prYearSlider;
+let prYear = 2040;
+
 function preload() {
   // Assuming your data is in a JSON format
   reliefData = loadTable("./relief_max.csv", "csv", "header");
-  prData = loadTable("./precipitation_pred_2100.csv", "csv", "header");
+  prData2100 = loadTable("./precipitation_pred_2100.csv", "csv", "header");
+  prData2070 = loadTable("./precipitation_pred_2070.csv", "csv", "header");
+  prData2040 = loadTable("./precipitation_pred_2040.csv", "csv", "header");
   font = loadFont("./assets/Inconsolata-Medium.ttf");
 }
 
@@ -53,7 +61,7 @@ function setup() {
   reliefSphereSizeSlider.position(20, 50);
 
   // Create a slider to control the precipitation scale
-  prScaleSlider = createSlider(0.5, 3, prScale, 0.01);
+  prScaleSlider = createSlider(0, 300, prScale, 10);
   prScaleSlider.position(20, 80);
 
   // Create a slider to control the sphere size
@@ -61,11 +69,11 @@ function setup() {
   prSphereSizeSlider.position(20, 110);
 
   // Precipitation visualization elevation
-  prElevSlider = createSlider(0, 200, prElev, 1);
+  prElevSlider = createSlider(0, 200, prElev, 10);
   prElevSlider.position(20, 140);
 
-  prSphereSizeDispersalSlider = createSlider(0, 1, prSphereSizeDispersal, 0.01);
-  prSphereSizeDispersalSlider.position(20, 170);
+  prYearSlider = createSlider(2040, 2100, prYear, 30);
+  prYearSlider.position(20, 200);
   // Find max elevation for scaling Z values
   for (let i = 0; i < reliefData.rows.length; i++) {
     let z = reliefData.rows[i][2];
@@ -74,9 +82,13 @@ function setup() {
     }
   }
   transformReliefData();
-  transformPrecipitationData();
+  prPoints2040 = transformPrecipitationData(prData2040);
+  prPoints2070 = transformPrecipitationData(prData2070);
+  prPoints2100 = transformPrecipitationData(prData2100);
   normalizeReliefPoints();
-  normalizePrecipitationPoints();
+  prPoints2040 = normalizePrecipitationPoints(prPoints2040);
+  prPoints2070 = normalizePrecipitationPoints(prPoints2070);
+  prPoints2100 = normalizePrecipitationPoints(prPoints2100);
 }
 function transformReliefData() {
   // Transform the data to an array of objects
@@ -88,16 +100,18 @@ function transformReliefData() {
   }
 }
 
-function transformPrecipitationData() {
+function transformPrecipitationData(data) {
+  arr = [];
   // Transform the data to an array of objects
-  for (let i = 0; i < prData.rows.length; i++) {
-    let y = prData.rows[i].arr[0];
-    let x = prData.rows[i].arr[1];
-    let pr = prData.rows[i].arr[2];
+  for (let i = 0; i < data.rows.length; i++) {
+    let y = data.rows[i].arr[0];
+    let x = data.rows[i].arr[1];
+    let pr = data.rows[i].arr[2];
     if (pr != "--") {
-      prPoints.push({ X: Number(x), Y: Number(y), pr: Number(pr) });
+      arr.push({ X: Number(x), Y: Number(y), pr: Number(pr) });
     }
   }
+  return arr;
 }
 
 function windowResized() {
@@ -141,7 +155,7 @@ function normalizeReliefPoints() {
   globalMaxY = Math.max(...points.map((p) => p.y));
 }
 
-function normalizePrecipitationPoints() {
+function normalizePrecipitationPoints(prPoints) {
   let hueStart = 180; // Hue for lowest precipitation
   let hueEnd = 300; // Hue for highest precipitation (e.g., 120 for green)
 
@@ -154,19 +168,20 @@ function normalizePrecipitationPoints() {
   let maxPr = Math.max(...prPoints.map((p) => p.pr));
 
   // Center and scale the points
-  prPoints = prPoints.map((p) => {
+  let prPointsNorm = prPoints.map((p) => {
     let hueValue = map(p.pr, minPr, maxPr, hueStart, hueEnd);
-
     return {
       lat: p.Y,
       long: p.X,
       pr: p.pr,
       x: map(p.X, minX, maxX, globalMinX, globalMaxX),
       y: map(p.Y, maxY, minY, globalMinY, globalMaxY),
-      z: map(p.pr, minPr, maxPr, 0, 1), // You might need to adjust Z scale based on your data
+    //   z: map(p.pr, minPr, maxPr, 0, 1), // You might need to adjust Z scale based on your data
+        z: p.pr,
       hue: Math.round(hueValue),
     };
   });
+  return prPointsNorm;
 }
 
 function draw() {
@@ -179,8 +194,8 @@ function draw() {
   text("Precipitation Scale", -width + 600, -height + 350);
   text("Precipitation Sphere Size", -width + 600, -height + 395);
   text("Precipitation Elevation", -width + 600, -height + 440);
-    text("Precipitation Sphere Size Dispersal", -width + 600, -height + 485);
-    
+    text(`Precipitation Year ${prYearSlider.value().toString()}`, -width + 600, -height + 530);
+
   text("Click and drag to rotate", -width + 500, -height + 700);
   text("Scroll to zoom", -width + 500, -height + 770);
 
@@ -201,10 +216,17 @@ function draw() {
   // Update precip elev based on slider value
   prElev = prElevSlider.value();
 
-  // Update precip sphere size disperzal based on slider value
-  prSphereSizeDispersal = prSphereSizeDispersalSlider.value();
+  // Update prYear
+  prYear = prYearSlider.value();
+
   drawRelief();
-  drawPrecipitation();
+  if (prYear == 2040) {
+    drawPrecipitation(prPoints2040);
+  } else if (prYear == 2070) {
+    drawPrecipitation(prPoints2070);
+  } else {
+    drawPrecipitation(prPoints2100);
+  }
   drawInfoText();
 }
 
@@ -229,11 +251,12 @@ function drawRelief() {
   }
 }
 
-function drawPrecipitation() {
+function drawPrecipitation(points) {
   // Draw each point and check for hovering
-  for (let pt of prPoints) {
+  translate(0, 0, prElev)
+  for (let pt of points) {
     push();
-    let z = map(pt.z, 0, 1, prElev, 100 + prScale * prElev);
+    let z = map(pt.z, 0, 1, 0, prScale);
     translate(pt.x, pt.y, z);
     // Use a larger radius for the hit test to make it easier to hover over points
     if (
@@ -244,7 +267,7 @@ function drawPrecipitation() {
       sphere(prSphereSize * 2);
     } else {
       stroke(pt.hue, 100 - pt.hue / 7, 100);
-      sphere(prSphereSize + map((prSphereSizeDispersal * (z)* 3), 0, 1, 0, 0.02));
+      sphere(map(z, 0, prScale, 0, prSphereSize * 3) );
     }
     // Render the sphere
     pop();

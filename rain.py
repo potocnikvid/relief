@@ -6,7 +6,7 @@ import cartopy.crs as ccrs
 import pandas as pd
 
 # Open the netCDF file
-ncfile = nc.Dataset('data/pr_12km_MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2_day_20710101_20991231.nc')
+ncfile = nc.Dataset('data/pr_12km_MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2_day_20110101_20401231.nc')
 
 # Read the data in the variable named 'pr'
 pr = ncfile.variables['pr'][:]
@@ -43,4 +43,4 @@ for i in range(len(lat)):
         data.append([lat[i]*10000, lon[j]*10000, np.sum(pr[:,i,j])])
 
 df = pd.DataFrame(data, columns=['X', 'Y', 'pr'])
-df.to_csv('data/precipitation_pred_2100.csv', index=False)
+df.to_csv('data/precipitation_pred_2040.csv', index=False)
