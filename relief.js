@@ -73,6 +73,7 @@ function setup() {
   prElevSlider.position(20, 140);
 
   prYearSlider = createSlider(2010, 2098, prYear, 1);
+  prYearSlider.style("width", "200px");
   prYearSlider.position(20, 200);
   // Find max elevation for scaling Z values
   for (let i = 0; i < reliefData.rows.length; i++) {
