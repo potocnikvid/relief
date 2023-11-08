@@ -242,7 +242,7 @@ function drawRelief() {
     // Use a larger radius for the hit test to make it easier to hover over points
     if (
       dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) <
-      reliefSphereSize * 2
+      10
     ) {
       hoveredPoints.push(pt); // Save the hovered point
       sphere(reliefSphereSize * 2);
@@ -266,7 +266,7 @@ function drawPrecipitation(points, year) {
     // Use a larger radius for the hit test to make it easier to hover over points
     if (
       dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) <
-      prSphereSize * 2
+      10
     ) {
       hoveredPoints.push(pt); // Save the hovered point
       sphere(prSphereSize * 2);
