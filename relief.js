@@ -98,6 +98,8 @@ function transformReliefData() {
     let z = reliefData.rows[i].arr[2];
     points.push({ X: Number(x), Y: Number(y), Z: Number(z) });
   }
+  // Take a random sample with half of paoints in points
+  points = points.filter((p) => Math.random() < 0.5);
 }
 
 function transformPrecipitationData(data) {
