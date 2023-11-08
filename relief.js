@@ -13,12 +13,12 @@ let prPoints2100 = [];
 let prPoints2070 = [];
 let prPoints2040 = [];
 let zScaleSlider;
-let zScale = 0.5; // Initial Z scale value
+let zScale = 0.6; // Initial Z scale value
 let prScaleSlider;
 let prScale = 100; // Initial Z scale value
 let previousZScale = zScale; // Used to scale the Z values based on the slider value
 let reliefSphereSizeSlider;
-let reliefSphereSize = 5; // Initial sphere size value
+let reliefSphereSize = 3; // Initial sphere size value
 let prSphereSizeSlider;
 let prSphereSize = 5; // Initial sphere size value
 let prElevSlider;
