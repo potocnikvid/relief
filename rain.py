@@ -8,6 +8,7 @@ import pandas as pd
 # Open the netCDF file
 ncfile = nc.Dataset('data/pr_12km_MOHC-HadGEM2-ES_rcp26_r1i1p1_KNMI-RACMO22E_v2_day_20710101_20991231.nc')
 
+pp.pprint(ncfile)
 # Read the data in the variable named 'pr'
 pr = ncfile.variables['pr'][:]
 # Read the data in the variable named 'time'

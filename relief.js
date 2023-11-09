@@ -20,7 +20,7 @@ let previousZScale = zScale; // Used to scale the Z values based on the slider v
 let reliefSphereSizeSlider;
 let reliefSphereSize = 3; // Initial sphere size value
 let prSphereSizeSlider;
-let prSphereSize = 5; // Initial sphere size value
+let prSphereSize = 14; // Initial sphere size value
 let prElevSlider;
 let prElev = 100; // Initial sphere size value
 let hoveredPoints = []; // This will hold the points that are being hovered
@@ -32,7 +32,8 @@ let globalMinX = 0;
 let globalMaxX = 0;
 let globalMinY = 0;
 let globalMaxY = 0;
-
+let mouseXScale = 0;
+let mouseYScale = 0;
 let prYearSlider;
 let prYear = 2023;
 
@@ -49,7 +50,7 @@ function setup() {
   createCanvas(width, height, WEBGL);
   let initDistance = (width + height) / 2;
   easycam = createEasyCam().setDistance(initDistance);
-  colorMode(HSB, 360, 100, 100); // Set color mode to HSB
+  colorMode(HSB); // Set color mode to HSB
   textFont(font, 28);
 
   // Create a slider to control the Z scale
@@ -57,7 +58,7 @@ function setup() {
   zScaleSlider.position(20, 20);
 
   // Create a slider to control the sphere size
-  reliefSphereSizeSlider = createSlider(0, 10, reliefSphereSize, 1);
+  reliefSphereSizeSlider = createSlider(0, 8, reliefSphereSize, 1);
   reliefSphereSizeSlider.position(20, 50);
 
   // Create a slider to control the precipitation scale
@@ -65,7 +66,7 @@ function setup() {
   prScaleSlider.position(20, 80);
 
   // Create a slider to control the sphere size
-  prSphereSizeSlider = createSlider(0, 10, prSphereSize, 1);
+  prSphereSizeSlider = createSlider(0, 25, prSphereSize, 1);
   prSphereSizeSlider.position(20, 110);
 
   // Precipitation visualization elevation
@@ -196,12 +197,9 @@ function normalizePrecipitationPoints(prPoints) {
 
 function draw() {
   background(360);
+  noStroke();
 
-  fill(0, 100, 100);
-  stroke(0, 100, 100);
-
-  directionalLight(255, 255, 255, 0, 0, -1); // Add some light
-
+  ambientLight(100); // Add a little ambient light
   // Reset hoveredPoint to [] at the start of each frame
   hoveredPoints = [];
 
@@ -219,9 +217,19 @@ function draw() {
 
   // Update prYear
   prYear = prYearSlider.value();
-  
+
   //Change value of html element with id prYear to prYear value
-    document.getElementById("prYear").innerHTML = prYear;
+  document.getElementById("prYear").innerHTML = prYear;
+
+  let cursorX = mouseX - width / 2;
+  let cursorY = mouseY - height / 2;
+
+  let targetX = map(cursorX, -width / 2, width / 2, globalMinX, globalMaxX);
+  let targetY = map(cursorY, -height / 2, height / 2, globalMinY, globalMaxY);
+
+  // Draw the line from the cursor to the point
+  stroke(20); // Set the line color
+  line(cursorX, cursorY, 5000, targetX, targetY, -5000);
 
   drawRelief();
   if (prYear >= 2010 && prYear < 2040) {
@@ -236,19 +244,21 @@ function draw() {
 
 function drawRelief() {
   // Draw each point and check for hovering
+  noStroke();
   for (let pt of points) {
     push();
     translate(pt.x, pt.y, pt.z + pt.z * zScale * 100);
+    let distance = reliefSphereSize > 15 ? reliefSphereSize : 15;
     // Use a larger radius for the hit test to make it easier to hover over points
-    if (
-      dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) <
-      10
-    ) {
+    if (dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) < distance) {
       hoveredPoints.push(pt); // Save the hovered point
-      sphere(reliefSphereSize * 2);
+      fill(0, 100, 100);
+      sphere(reliefSphereSize * 2, 6, 6);
     } else {
       stroke(pt.hue, 100 - pt.hue / 3, 100 - pt.hue / 3);
-      sphere(reliefSphereSize);
+
+      fill(pt.hue, 100 - pt.hue / 3, 100 - pt.hue / 3);
+      sphere(reliefSphereSize, 6, 6);
     }
     // Render the sphere
     pop();
@@ -257,22 +267,25 @@ function drawRelief() {
 
 function drawPrecipitation(points, year) {
   // Draw each point and check for hovering
+  noStroke();
   translate(0, 0, prElev);
   points = points.filter((p) => p.year == year);
   for (let pt of points) {
     push();
     let z = map(pt.z, 0, 1, 0, prScale);
+    let size = map(z, 0, prScale, 0, prSphereSize * 3)
     translate(pt.x, pt.y, z);
     // Use a larger radius for the hit test to make it easier to hover over points
-    if (
-      dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) <
-      10
-    ) {
+    let distance = size > 15 ? size : 15;
+    if (dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) < distance) {
       hoveredPoints.push(pt); // Save the hovered point
-      sphere(prSphereSize * 2);
+      fill(0, 100, 100);
+      sphere(map(z, 0, prScale, 0, prSphereSize * 4), 8, 8);
     } else {
-      stroke(pt.hue, 100 - pt.hue / 7, 100);
-      sphere(map(z, 0, prScale, 0, prSphereSize * 3));
+      stroke(pt.hue, 100 - pt.hue / 7, 150 - pt.hue / 7);
+
+      fill(pt.hue, 100 - pt.hue / 7, 150 - pt.hue / 7);
+      sphere(size, 8, 8);
     }
     // Render the sphere
     pop();
@@ -281,25 +294,31 @@ function drawPrecipitation(points, year) {
 
 function drawInfoText() {
   // Display the lat/long text if a point is hovered
-  if (hoveredPoints.length > 0) {
-    fill(0);
-    noStroke();
+  fill(0);
+  if (hoveredPoints.length > 0) { 
+    let htmlEl = "";
     for (let i = 0; i < hoveredPoints.length; i++) {
       let hoveredPoint = hoveredPoints[i];
-
+      let htmlPoint = `<p style="position: absolute; top: ${i * 35}px; right: 20px;`;
       if (hoveredPoint.pr) {
-        text(
-          `Lat: ${hoveredPoint.lat}, Long: ${hoveredPoint.long}, Precipitation: ${hoveredPoint.pr}`,
-          mouseX / 2,
-          mouseY / 2 - 35
-        );
+        // text(
+        //   `Lat: ${hoveredPoint.lat}, Long: ${hoveredPoint.long}, Precipitation: ${hoveredPoint.pr}`,
+        //   mouseX / 2,
+        //   mouseY / 2 - 35
+        // );
+        label = `Lat: ${hoveredPoint.lat}, Long: ${hoveredPoint.long}, Precipitation: ${hoveredPoint.pr}`
       } else {
-        text(
-          `X: ${hoveredPoint.long}, Y: ${hoveredPoint.lat}, Elevation: ${hoveredPoint.elevation}`,
-          mouseX / 2,
-          mouseY / 2 + i * 35
-        );
+        // text(
+        //   `X: ${hoveredPoint.long}, Y: ${hoveredPoint.lat}, Elevation: ${hoveredPoint.elevation}`,
+        //   mouseX / 2,
+        //   mouseY / 2 + i * 35
+        // );
+        label = `X: ${hoveredPoint.long}, Y: ${hoveredPoint.lat}, Elevation: ${hoveredPoint.elevation}`
       }
+      htmlPoint += `"><b>${label}</b></p>`
+      htmlEl += htmlPoint;
     }
+    console.log(htmlEl)
+    document.getElementById("information").innerHTML = htmlEl;
   }
 }
