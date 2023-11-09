@@ -18,7 +18,7 @@ let prScaleSlider;
 let prScale = 100; // Initial Z scale value
 let previousZScale = zScale; // Used to scale the Z values based on the slider value
 let reliefSphereSizeSlider;
-let reliefSphereSize = 3; // Initial sphere size value
+let reliefSphereSize = 2; // Initial sphere size value
 let prSphereSizeSlider;
 let prSphereSize = 14; // Initial sphere size value
 let prElevSlider;
@@ -58,7 +58,7 @@ function setup() {
   zScaleSlider.position(20, 20);
 
   // Create a slider to control the sphere size
-  reliefSphereSizeSlider = createSlider(0, 8, reliefSphereSize, 1);
+  reliefSphereSizeSlider = createSlider(0, 4, reliefSphereSize, 1);
   reliefSphereSizeSlider.position(20, 50);
 
   // Create a slider to control the precipitation scale
@@ -101,7 +101,7 @@ function transformReliefData() {
     points.push({ X: Number(x), Y: Number(y), Z: Number(z) });
   }
   // Take a random sample with half of paoints in points
-  points = points.filter((p) => Math.random() < 0.5);
+  // points = points.filter((p) => Math.random() < 0.5);
 }
 
 function transformPrecipitationData(data) {
@@ -248,6 +248,7 @@ function drawRelief() {
   for (let pt of points) {
     push();
     translate(pt.x, pt.y, pt.z + pt.z * zScale * 100);
+
     let distance = reliefSphereSize > 15 ? reliefSphereSize : 15;
     // Use a larger radius for the hit test to make it easier to hover over points
     if (dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) < distance) {
@@ -256,7 +257,6 @@ function drawRelief() {
       sphere(reliefSphereSize * 2, 6, 6);
     } else {
       stroke(pt.hue, 100 - pt.hue / 3, 100 - pt.hue / 3);
-
       fill(pt.hue, 100 - pt.hue / 3, 100 - pt.hue / 3);
       sphere(reliefSphereSize, 6, 6);
     }
@@ -272,9 +272,11 @@ function drawPrecipitation(points, year) {
   points = points.filter((p) => p.year == year);
   for (let pt of points) {
     push();
+
     let z = map(pt.z, 0, 1, 0, prScale);
-    let size = map(z, 0, prScale, 0, prSphereSize * 3)
     translate(pt.x, pt.y, z);
+
+    let size = map(z, 0, prScale, 0, prSphereSize * 3)
     // Use a larger radius for the hit test to make it easier to hover over points
     let distance = size > 15 ? size : 15;
     if (dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) < distance) {
@@ -283,7 +285,6 @@ function drawPrecipitation(points, year) {
       sphere(map(z, 0, prScale, 0, prSphereSize * 4), 8, 8);
     } else {
       stroke(pt.hue, 100 - pt.hue / 7, 150 - pt.hue / 7);
-
       fill(pt.hue, 100 - pt.hue / 7, 150 - pt.hue / 7);
       sphere(size, 8, 8);
     }
@@ -301,18 +302,8 @@ function drawInfoText() {
       let hoveredPoint = hoveredPoints[i];
       let htmlPoint = `<p style="position: absolute; top: ${i * 35}px; right: 20px;`;
       if (hoveredPoint.pr) {
-        // text(
-        //   `Lat: ${hoveredPoint.lat}, Long: ${hoveredPoint.long}, Precipitation: ${hoveredPoint.pr}`,
-        //   mouseX / 2,
-        //   mouseY / 2 - 35
-        // );
         label = `Lat: ${hoveredPoint.lat}, Long: ${hoveredPoint.long}, Precipitation: ${hoveredPoint.pr}`
       } else {
-        // text(
-        //   `X: ${hoveredPoint.long}, Y: ${hoveredPoint.lat}, Elevation: ${hoveredPoint.elevation}`,
-        //   mouseX / 2,
-        //   mouseY / 2 + i * 35
-        // );
         label = `X: ${hoveredPoint.long}, Y: ${hoveredPoint.lat}, Elevation: ${hoveredPoint.elevation}`
       }
       htmlPoint += `"><b>${label}</b></p>`
