@@ -254,11 +254,11 @@ function drawRelief() {
     if (dist(mouseX - width / 2, mouseY - height / 2, pt.x, pt.y) < distance) {
       hoveredPoints.push(pt); // Save the hovered point
       fill(0, 100, 100);
-      sphere(reliefSphereSize * 2, 6, 6);
+      sphere(reliefSphereSize * 2, 4, 4);
     } else {
       stroke(pt.hue, 100 - pt.hue / 3, 100 - pt.hue / 3);
       fill(pt.hue, 100 - pt.hue / 3, 100 - pt.hue / 3);
-      sphere(reliefSphereSize, 6, 6);
+      sphere(reliefSphereSize, 4, 4);
     }
     // Render the sphere
     pop();
