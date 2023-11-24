@@ -12,10 +12,6 @@ Ob lebdenjem z miško nad zaslonom se koordinate miške nad zaslonom preslikajo 
 
 ## https://relief-zeta.vercel.app/
 
-## https://relief-zeta.vercel.app/
-
-## https://relief-zeta.vercel.app/
-
 
 
 <img width="1800" alt="Screenshot 2023-11-24 at 23 18 27" src="https://github.com/potocnikvid/relief/assets/54533045/6294f72c-5aef-4134-a2af-3239ccb0a74f">
